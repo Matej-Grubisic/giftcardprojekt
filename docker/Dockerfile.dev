@@ -1,0 +1,7 @@
+#FROM php:8.1.8
+
+FROM webdevops/php-nginx:8.1
+
+ENV WEB_DOCUMENT_ROOT="/app"
+ENV WEB_DOCUMENT_INDEX="/public/index.php"
+ENV COMPOSER_VERSION="1"
