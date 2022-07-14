@@ -12,6 +12,8 @@ services:
       - 8000:80
     volumes:
       - ./app:/app
+    environment:
+      - FIRESTORE_EMULATOR_HOST=firebase:8080
   database:
     #ulogiraj se u firebase svaki put kad se builda 
     container_name: firebase
@@ -21,10 +23,7 @@ services:
     ports:
       - 4000:4000
       - 8081:8081
+      - 8080:8080
     volumes:
       - ./app:/app
-    environment:
-      - giftcard
-      - 1//09ByBWr9rIfQaCgYIARAAGAkSNwF-L9IrEAs8OEx_Y_WD-7GFhJqwdFl8XGh6tw92Xmz3ZcvdSj_otct98xgHqrkeDkJFzHKpIi8
-  
-
+    
