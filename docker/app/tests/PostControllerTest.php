@@ -13,6 +13,7 @@ class PostControllerTest extends WebTestCase
     public function testSearchGiftcard(): void
     {
         $client = static::createClient();
+        #nemoj hardkodira uvik <<<<<<<<< popravi ovo ispod
         $client->request('GET', '/giftcard/search/d0fea202bab24e60982f');
         $response = $client->getResponse();
 
@@ -67,18 +68,18 @@ class PostControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request('POST', '/giftcard/redeem');
         $response = $client->getResponse();
-        $valid = false;
+        $used = true;
 
-        $valid = json_encode($valid);
+        $used = json_encode($used);
         $this->assertSame(200, $response->getStatusCode());
         $content = $response->getContent();
         $array = json_decode($content, true);
         
         #var_dump($array);
-        $validarray = json_encode($array["isValid"]);
+        $usedarray = json_encode($array["isValid"]);
         #print_r($valid);
         
-        $this->assertJsonStringEqualsJsonString($valid, $validarray);
+        $this->assertJsonStringEqualsJsonString($used, $usedarray);
         $this->assertJson($response->getContent());
     }
 }
