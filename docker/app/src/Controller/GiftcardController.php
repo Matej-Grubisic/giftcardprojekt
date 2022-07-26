@@ -70,54 +70,44 @@ class GiftcardController extends AbstractController
             'projectId' => self::PROJECTID,
         ]);
 
-        $newNum = $request->toArray();
+        $givenAmount = $request->toArray();
 
         $doc = $firestore->collection($_ENV['COLLECTION'])->document($id);
         $snapshot = $doc->snapshot();
 
-        $oldNum = $snapshot->data();
-        $oldNum = $oldNum['currency']['amount'];
-        
-        $newNum = $newNum['amount'];
-        
+        $currentNum = $snapshot->data();
+        $currentNum = $currentNum['currency']['amount'];
+
+        $givenAmount = $givenAmount['amount'];
+
         if (!$snapshot->exists()) {
             return new JsonResponse(
-                ["This giftcard does not exist"]
+                "This giftcard does not exist"
             );
-        } else {            
-            if($newNum < 0){
-                return new JsonResponse(
-                  "The amount you want to use is invalid, please try again."  
-                );
-            }
-            else{
-                $data = $oldNum - $newNum;
-                if($data < 0){
-                    return new JsonResponse(
-                        "There isn't enough money on the card for this transaction." 
-                    );
-                }
-                else{
-                    $doc->update([
-                        ['path' => 'currency.amount', 'value' => $data]
-                    ]);
-        
-                    $snapshot = $doc->snapshot();
-                    return new JsonResponse(
-                        $snapshot->data()
-                    );
-                }
-            }
-
-            
-            
-            #ubaci da nemore bit used<napravljeno|| i ubaci nacin za pare micat <napravljeno isto
-            
         }
 
-        #$doc->delete();
+        if ($givenAmount < 0) {
+            return new JsonResponse(
+                "The amount you want to use is invalid, please try again."
+            );
+        }
 
+        $data = $currentNum - $givenAmount;
+        if ($data < 0) {
+            return new JsonResponse(
+                "There isn't enough money on the card for this transaction."
+            );
+        }
 
+        $doc->update([
+            ['path' => 'currency.amount', 'value' => $data]
+        ]);
+
+        $snapshot = $doc->snapshot();
+        return new JsonResponse(
+            $snapshot->data()
+        );
+        #ubaci da nemore bit used<napravljeno|| i ubaci nacin za pare micat <napravljeno isto
     }
     /** 
      * @Route("/giftcard/invalidate/{id}", methods={"PATCH"})
@@ -142,22 +132,21 @@ class GiftcardController extends AbstractController
             return new JsonResponse(
                 "There is no giftcard"
             );
-        } else{
-            #ubaci da nemore invalidateat ako je vec invalid < rjeseno s donjin kodon
-            if($array != 'false'){
-                $doc->update([
-                    ['path' => 'isValid', 'value' => false]
-                ]);
-                $snapshot = $doc->snapshot();
-                return new JsonResponse(
-                    $snapshot->data()
-                );
-            }
-            else{
-                return new JsonResponse(
-                    "This giftcard is already invalid"
-                );
-            }
         }
+
+        #ubaci da nemore invalidateat ako je vec invalid < rjeseno s donjin kodon
+        if ($array != 'false') {
+            $doc->update([
+                ['path' => 'isValid', 'value' => false]
+            ]);
+            $snapshot = $doc->snapshot();
+            return new JsonResponse(
+                $snapshot->data()
+            );
+        }
+        
+        return new JsonResponse(
+            "This giftcard is already invalid"
+        );
     }
 }
