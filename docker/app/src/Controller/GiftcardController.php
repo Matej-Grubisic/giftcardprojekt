@@ -8,18 +8,20 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
+#php bin/console ca:cl
 class GiftcardController extends AbstractController
 {
-    const projectId = 'matejgrubisicgiftcard';
+    const PROJECTID = 'matejgrubisicgiftcard';
     /** 
      * @Route("/giftcard/create", methods={"POST"})
      */
-    public function giftcreate(Request $request): JsonResponse
+    public function giftCreate(Request $request): JsonResponse
     {
+        #makni iz body-a isUsed jer to tako neradi
         $data = $request->toArray();
 
         $firestore = new FirestoreClient([
-            'projectId' => self::projectId,
+            'projectId' => self::PROJECTID,
         ]);
 
 
@@ -37,11 +39,11 @@ class GiftcardController extends AbstractController
     /** 
      * @Route("/giftcard/search/{id}", methods={"GET"})
      */
-    public function giftget($id): JsonResponse
+    public function giftGet($id): JsonResponse
     {
 
         $firestore = new FirestoreClient([
-            'projectId' => self::projectId,
+            'projectId' => self::PROJECTID,
         ]);
 
         $doc = $firestore->collection($_ENV['COLLECTION'])->document($id);
@@ -60,56 +62,80 @@ class GiftcardController extends AbstractController
     /** 
      * @Route("/giftcard/redeem/{id}", methods={"POST"})
      */
-    public function giftredeem($id): JsonResponse
+    public function giftRedeem($id, Request $request): JsonResponse
     {
-        #body money
-        #validacija
+        #u body ubaci money koliko treba oduzet
+        #validacija rjesi da validira dobro sve i da provjeri jeli neko unia -50 npr ili +50
         $firestore = new FirestoreClient([
-            'projectId' => self::projectId,
+            'projectId' => self::PROJECTID,
         ]);
+
+        $givenAmount = $request->toArray();
 
         $doc = $firestore->collection($_ENV['COLLECTION'])->document($id);
         $snapshot = $doc->snapshot();
 
+        $currentNum = $snapshot->data();
+        $currentNum = $currentNum['currency']['amount'];
+
+        $givenAmount = $givenAmount['amount'];
+
         if (!$snapshot->exists()) {
             return new JsonResponse(
-                ["This giftcard does not exist"]
-            );
-        } else {
-            $doc->update([
-                ['path' => 'isUsed', 'value' => true]
-            ]);
-
-            $snapshot = $doc->snapshot();
-            return new JsonResponse(
-                $snapshot->data()
+                "This giftcard does not exist"
             );
         }
 
-        #$doc->delete();
+        if ($givenAmount < 0) {
+            return new JsonResponse(
+                "The amount you want to use is invalid, please try again."
+            );
+        }
 
+        $data = $currentNum - $givenAmount;
+        if ($data < 0) {
+            return new JsonResponse(
+                "There isn't enough money on the card for this transaction."
+            );
+        }
 
+        $doc->update([
+            ['path' => 'currency.amount', 'value' => $data]
+        ]);
+
+        $snapshot = $doc->snapshot();
+        return new JsonResponse(
+            $snapshot->data()
+        );
+        #ubaci da nemore bit used<napravljeno|| i ubaci nacin za pare micat <napravljeno isto
     }
     /** 
      * @Route("/giftcard/invalidate/{id}", methods={"PATCH"})
      */
-    public function giftinvalidate($id): JsonResponse
+    public function giftInvalidate($id): JsonResponse
     {
         #PATCH change bool
 
         $firestore = new FirestoreClient([
-            'projectId' => self::projectId,
+            'projectId' => self::PROJECTID,
         ]);
 
         $doc = $firestore->collection($_ENV['COLLECTION'])->document($id);
 
         $snapshot = $doc->snapshot();
+
+        $data = $snapshot->data();
+        $array = json_encode($data['isValid'], true);
+        #print_r($array);
 
         if (!$snapshot->exists()) {
             return new JsonResponse(
                 "There is no giftcard"
             );
-        } else{
+        }
+
+        #ubaci da nemore invalidateat ako je vec invalid < rjeseno s donjin kodon
+        if ($array != 'false') {
             $doc->update([
                 ['path' => 'isValid', 'value' => false]
             ]);
@@ -118,5 +144,9 @@ class GiftcardController extends AbstractController
                 $snapshot->data()
             );
         }
+        
+        return new JsonResponse(
+            "This giftcard is already invalid"
+        );
     }
 }
