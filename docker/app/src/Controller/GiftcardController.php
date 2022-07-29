@@ -84,23 +84,20 @@ class GiftcardController extends AbstractController
 
         if (!$snapshot->exists()) {
             return new JsonResponse(
-                "This giftcard does not exist",
-                404
+                "This giftcard does not exist"
             );
         }
 
         if ($givenAmount < 0) {
             return new JsonResponse(
-                "The amount you want to use is invalid, please try again.",
-                406
+                "The amount you want to use is invalid, please try again."
             );
         }
 
         $data = $currentNum - $givenAmount;
         if ($data < 0) {
             return new JsonResponse(
-                "There isn't enough money on the card for this transaction.",
-                413
+                "There isn't enough money on the card for this transaction."
             );
         }
 
@@ -135,8 +132,7 @@ class GiftcardController extends AbstractController
 
         if (!$snapshot->exists()) {
             return new JsonResponse(
-                "There is no giftcard",
-                404
+                "There is no giftcard"
             );
         }
 
@@ -152,8 +148,7 @@ class GiftcardController extends AbstractController
         }
         
         return new JsonResponse(
-            "This giftcard is already invalid",
-            400
+            "This giftcard is already invalid"
         );
     }
 }
