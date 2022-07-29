@@ -27,11 +27,11 @@ class GiftcardController extends AbstractController
 
         $document = $firestore->collection($_ENV['COLLECTION'])->newDocument();
         $document->create($data);
-
+        
 
 
         return new JsonResponse(
-            $document->snapshot()->data()
+            ["id" => $document->snapshot()->id(), ...$document->snapshot()->data()]
         );
         #works 
     }
@@ -70,15 +70,17 @@ class GiftcardController extends AbstractController
             'projectId' => self::PROJECTID,
         ]);
 
+        #triba ubacit da provjeri je li validan giftcard
+
         $givenAmount = $request->toArray();
 
         $doc = $firestore->collection($_ENV['COLLECTION'])->document($id);
         $snapshot = $doc->snapshot();
 
         $currentNum = $snapshot->data();
-        $currentNum = $currentNum['currency']['amount'];
+        $currentNum = $currentNum["currency"]["amount"];
 
-        $givenAmount = $givenAmount['amount'];
+        $givenAmount = $givenAmount["amount"];
 
         if (!$snapshot->exists()) {
             return new JsonResponse(
