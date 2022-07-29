@@ -27,11 +27,11 @@ class GiftcardController extends AbstractController
 
         $document = $firestore->collection($_ENV['COLLECTION'])->newDocument();
         $document->create($data);
-
+        
 
 
         return new JsonResponse(
-            $document->snapshot()->data()
+            ["id" => $document->snapshot()->id(), ...$document->snapshot()->data()]
         );
         #works 
     }
@@ -70,32 +70,37 @@ class GiftcardController extends AbstractController
             'projectId' => self::PROJECTID,
         ]);
 
+        #triba ubacit da provjeri je li validan giftcard
+
         $givenAmount = $request->toArray();
 
         $doc = $firestore->collection($_ENV['COLLECTION'])->document($id);
         $snapshot = $doc->snapshot();
 
         $currentNum = $snapshot->data();
-        $currentNum = $currentNum['currency']['amount'];
+        $currentNum = $currentNum["currency"]["amount"];
 
-        $givenAmount = $givenAmount['amount'];
+        $givenAmount = $givenAmount["amount"];
 
         if (!$snapshot->exists()) {
             return new JsonResponse(
-                "This giftcard does not exist"
+                "This giftcard does not exist",
+                404
             );
         }
 
         if ($givenAmount < 0) {
             return new JsonResponse(
-                "The amount you want to use is invalid, please try again."
+                "The amount you want to use is invalid, please try again.",
+                406
             );
         }
 
         $data = $currentNum - $givenAmount;
         if ($data < 0) {
             return new JsonResponse(
-                "There isn't enough money on the card for this transaction."
+                "There isn't enough money on the card for this transaction.",
+                413
             );
         }
 
@@ -130,7 +135,8 @@ class GiftcardController extends AbstractController
 
         if (!$snapshot->exists()) {
             return new JsonResponse(
-                "There is no giftcard"
+                "There is no giftcard",
+                404
             );
         }
 
@@ -146,7 +152,8 @@ class GiftcardController extends AbstractController
         }
         
         return new JsonResponse(
-            "This giftcard is already invalid"
+            "This giftcard is already invalid",
+            400
         );
     }
 }
