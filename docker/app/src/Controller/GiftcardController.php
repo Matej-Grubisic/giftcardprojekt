@@ -2,11 +2,15 @@
 
 namespace App\Controller;
 
+use Doctrine\Migrations\Configuration\Migration\JsonFile;
 use Google\Cloud\Firestore\FirestoreClient;
+use Google\Cloud\Firestore\FieldValue;
+use Google\Type\DayOfWeek;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ErrorHandler\Error\UndefinedMethodError;
 
 #php bin/console ca:cl
 class GiftcardController extends AbstractController
@@ -17,7 +21,7 @@ class GiftcardController extends AbstractController
      */
     public function giftCreate(Request $request): JsonResponse
     {
-        #makni iz body-a isUsed jer to tako neradi
+        
         $data = $request->toArray();
 
         $firestore = new FirestoreClient([
@@ -26,14 +30,37 @@ class GiftcardController extends AbstractController
 
 
         $document = $firestore->collection($_ENV['COLLECTION'])->newDocument();
-        $document->create($data);
+        #echo $data['type'];
+        if($data['value']['amount'] < 0){
+            return new JsonResponse(
+                "This giftcard has an invalid value, please try again."
+            );
+        }
+        if($data['type'] != "DIGITAL"){
+            return new JsonResponse(
+                "This giftcard has an invalid type, please try again."
+            );
+        }
+        $validData = [
+            "type"=> $data['type'],
+            "value"=>[
+                "amount" => $data['value']['amount'],
+                "currency" => $data['value']['currency']
+            ],
+            "transaction"=> [],
+            "isValid" => true
+        ];
         
+        $document->create($validData);
+        $addData = ["amount:" . " " . $data['value']['amount'] . " " . "date:" . " " . $document->snapshot()->createTime()];
+        $document->update([
+            ['path' => 'transaction.create', 'value' => FieldValue::arrayUnion($addData)]
+        ]);
 
 
         return new JsonResponse(
             ["id" => $document->snapshot()->id(), ...$document->snapshot()->data()]
-        );
-        #works 
+        ); 
     }
 
     /** 
@@ -64,13 +91,11 @@ class GiftcardController extends AbstractController
      */
     public function giftRedeem($id, Request $request): JsonResponse
     {
-        #u body ubaci money koliko treba oduzet
-        #validacija rjesi da validira dobro sve i da provjeri jeli neko unia -50 npr ili +50
+        
         $firestore = new FirestoreClient([
             'projectId' => self::PROJECTID,
         ]);
 
-        #triba ubacit da provjeri je li validan giftcard
 
         $givenAmount = $request->toArray();
 
@@ -78,8 +103,19 @@ class GiftcardController extends AbstractController
         $snapshot = $doc->snapshot();
 
         $currentNum = $snapshot->data();
-        $currentNum = $currentNum["currency"]["amount"];
+        $currentNum = $currentNum["value"]["amount"];
 
+        $data = $snapshot->data();
+        #$array = json_encode($data['isValid'], true);
+        $array = $data["isValid"];
+        
+         
+        if($array === false){
+            return new JsonResponse(
+                "This giftcard is invalid"
+            );
+        }
+        
         $givenAmount = $givenAmount["amount"];
 
         if (!$snapshot->exists()) {
@@ -101,8 +137,13 @@ class GiftcardController extends AbstractController
             );
         }
 
+        $addData = ["amount:" . " " . $data . " " . "date:" . " " . $doc->snapshot()->updateTime()];
+
         $doc->update([
-            ['path' => 'currency.amount', 'value' => $data]
+            ['path' => 'value.amount', 'value' => $data]
+        ]);
+        $doc->update([
+            ['path' => 'transaction.redeem', 'value' => FieldValue::arrayUnion($addData)]
         ]);
 
         $snapshot = $doc->snapshot();
@@ -116,18 +157,18 @@ class GiftcardController extends AbstractController
      */
     public function giftInvalidate($id): JsonResponse
     {
-        #PATCH change bool
 
         $firestore = new FirestoreClient([
             'projectId' => self::PROJECTID,
         ]);
+
 
         $doc = $firestore->collection($_ENV['COLLECTION'])->document($id);
 
         $snapshot = $doc->snapshot();
 
         $data = $snapshot->data();
-        $array = json_encode($data['isValid'], true);
+        
         #print_r($array);
 
         if (!$snapshot->exists()) {
@@ -136,10 +177,16 @@ class GiftcardController extends AbstractController
             );
         }
 
-        #ubaci da nemore invalidateat ako je vec invalid < rjeseno s donjin kodon
+        $addData = ["amount:" . " " . $data['value']['amount'] . " " . "date:" . " " . $doc->snapshot()->updateTime()];
+        #$array = json_encode($data['isValid'], true);
+        $array = json_encode($data['isValid'], true);
+
         if ($array != 'false') {
+            $doc->set([
+                'isValid'=> false
+            ],['merge' => true]);
             $doc->update([
-                ['path' => 'isValid', 'value' => false]
+                ['path' => 'transaction.invalidate', 'value' => FieldValue::arrayUnion($addData)]
             ]);
             $snapshot = $doc->snapshot();
             return new JsonResponse(
@@ -150,5 +197,6 @@ class GiftcardController extends AbstractController
         return new JsonResponse(
             "This giftcard is already invalid"
         );
+        
     }
 }

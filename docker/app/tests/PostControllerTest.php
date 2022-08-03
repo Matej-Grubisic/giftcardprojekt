@@ -16,11 +16,10 @@ class PostControllerTest extends WebTestCase
 
         $body = [
             "type" => "DIGITAL",
-            "currency" => [
+            "value" => [
                 "amount" => 51,
                 "currency" => "USD"
-            ],
-            "isValid" => true
+            ]
         ];
         $body = json_encode($body);
         $client->request('POST', '/giftcard/create', [], [], [], $body);
@@ -29,6 +28,7 @@ class PostControllerTest extends WebTestCase
         $id = $response->getContent();
 
         $this->assertSame(200, $response->getStatusCode());
+        #$this->assertStringContainsString($body, $response->getContent());
         $this->assertJson($response->getContent());
         return $id;
     }
@@ -43,30 +43,6 @@ class PostControllerTest extends WebTestCase
         $response = $client->getResponse();
 
         $this->assertSame(200, $response->getStatusCode());
-        $this->assertJson($response->getContent());
-    }
-    /**
-     * @depends testCreateGiftcard
-     */
-    public function testInvalidateGiftcard($id): void
-    {
-        $array = [];
-        $id = json_decode($id, 1);
-        #var_dump($id);
-        $client = static::createClient();
-        $client->request('PATCH', "/giftcard/invalidate/$id[id]");
-        $response = $client->getResponse();
-        $valid = false;
-        $valid = json_encode($valid);
-
-        $this->assertSame(200, $response->getStatusCode());
-        $content = $response->getContent();
-        $array = json_decode($content, true);
-        #var_dump($array);
-        $newArray = $array["isValid"];
-        $validarray = json_encode($newArray);
-        #print_r($valid);
-        $this->assertJsonStringEqualsJsonString($valid, $validarray);
         $this->assertJson($response->getContent());
     }
     /**
@@ -88,13 +64,41 @@ class PostControllerTest extends WebTestCase
         $this->assertSame(200, $response->getStatusCode());
         $content = $response->getContent();
         $array = json_decode($content, true);
-
+        #var_dump($content);
         $body = json_decode($body, true);
-        $newAmount = $array['currency']['amount'] - $body['amount'];
-        $newAmount = json_encode($newAmount);
-        $oldAmount = json_encode($array['currency']['amount']);
-        print($newAmount);
-        $this->assertJsonStringNotEqualsJsonString($newAmount, $oldAmount);
+        $newAmount = $array["value"]["amount"] - $body["amount"];
+        #$newAmount = json_encode($newAmount);
+        #$oldAmount = json_encode($array['value']['amount']);
+        $oldAmount = $array['value']['amount'];
+        #print($newAmount);
+        #$this->assertJsonStringNotEqualsJsonString($newAmount, $oldAmount);
+        $this->assertNotEquals($newAmount,$oldAmount);
+        $this->assertJson($response->getContent());
+    }
+    /**
+     * @depends testCreateGiftcard
+     */
+    public function testInvalidateGiftcard($id): void
+    {
+        $array = [];
+        $id = json_decode($id, 1);
+        #var_dump($id);
+        $client = static::createClient();
+        $client->request('PATCH', "/giftcard/invalidate/$id[id]");
+        $response = $client->getResponse();
+        $valid = false;
+        #$valid = json_encode($valid);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $content = $response->getContent();
+        $array = json_decode($content, true);
+        #var_dump($array);
+        $newArray = $array["isValid"];
+        #$validarray = json_encode($newArray);
+        $validarray = $newArray;
+        #print_r($valid);
+        #$this->assertJsonStringEqualsJsonString($valid, $validarray);
+        $this->assertEquals($valid,$validarray);
         $this->assertJson($response->getContent());
     }
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<ruleset name="Lenient symfony">
+    <description>Coding standard based on Symfony standard with few modifications.</description>
+
+    <rule ref="Symfony"></rule>
+
+    <rule ref="Symfony.Commenting.FunctionComment.Missing">
+         <type>warning</type>
+    </rule>
+
+    <rule ref="Symfony.Commenting.ClassComment.Missing">
+        <type>warning</type>
+    </rule>
+
+</ruleset>

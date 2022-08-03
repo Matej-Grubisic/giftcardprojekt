@@ -1,0 +1,11 @@
+{
+    "phpcs.executablePath": "vendor/bin/phpcs",
+    "phpcs.composerJsonPath": "composer.json",
+    "phpcs.enable": true,
+    "phpcs.standard": "Symfony",
+    "phpcs.ignorePatterns": [
+        "public/bundles/*",
+        "vendor/*",
+        "var/*"
+    ]
+}

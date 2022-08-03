@@ -8,6 +8,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "doctrine/annotations": "^1.13",
+        "escapestudios/symfony2-coding-standard": "^3.12",
         "google/cloud-firestore": "^1.24",
         "grpc/grpc": "^1.38",
         "symfony/console": "6.1.*",
@@ -54,10 +55,12 @@
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
         },
         "post-install-cmd": [
-            "@auto-scripts"
+            "@auto-scripts",
+            "\"vendor/bin/phpcs\" --config-set installed_paths vendor/escapestudios/symfony2-coding-standard"
         ],
         "post-update-cmd": [
-            "@auto-scripts"
+            "@auto-scripts",
+            "\"vendor/bin/phpcs\" --config-set installed_paths vendor/escapestudios/symfony2-coding-standard"
         ]
     },
     "conflict": {
@@ -74,6 +77,7 @@
         "symfony/browser-kit": "6.1.*",
         "symfony/css-selector": "6.1.*",
         "symfony/maker-bundle": "^1.44",
-        "symfony/phpunit-bridge": "^6.1"
+        "symfony/phpunit-bridge": "^6.1",
+        "squizlabs/php_codesniffer": "*"
     }
 }
